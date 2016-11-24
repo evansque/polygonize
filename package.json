@@ -1,7 +1,7 @@
 {
-  "name": "singlec",
-  "version": "1.0.0",
-  "description": "",
+  "name": "polygonize",
+  "version": "0.1.0",
+  "description": "A fun tool to create geometric low poly art images",
   "main": "script.js",
   "scripts": {
     "start": "gulp",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AymanJitan/triangular.git"
+    "url": "git+https://github.com/AymanJitan/polygonize.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "AymanJitan <ayman.jitan@gmail.com>",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AymanJitan/triangular/issues"
+    "url": "https://github.com/AymanJitan/polygonize/issues"
   },
-  "homepage": "https://github.com/AymanJitan/triangular#readme",
+  "homepage": "https://github.com/AymanJitan/polygonize",
   "devDependencies": {
     "babel-preset-es2015": "^6.18.0",
     "gulp": "^3.9.1",

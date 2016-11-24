@@ -29,7 +29,7 @@ Load the script files
   });
 ```
 
-* src (string): any acceptable image url or data url
+* src (string): any acceptable image url or data url (must be [CORS enabled](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image))
 * cellSize (int): grid cell size in pixels
 * progress (function(int)): a callback function that will be called when image processing updates
 * onSuccess (function(canvasElem)): a callback function that will be called when processing is done successfully

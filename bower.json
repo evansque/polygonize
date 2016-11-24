@@ -1,0 +1,13 @@
+{
+  "name": "singleC",
+  "homepage": "https://github.com/AymanJitan/triangular",
+  "authors": [
+    "AymanJitan <ayman.jitan@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "dependencies": {
+    "delaunay-fast": "^1.0.1"
+  }
+}

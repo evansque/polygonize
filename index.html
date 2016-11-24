@@ -1,332 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Page Title</title>
+    <title>Polygonize</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 
-<canvas class='container'></canvas>
+<div class="container">
+    <header id="header">
+        <div class="cell-size-value-wrapper">
+            <span>Cell size:</span>
+            <span id="cell-size-value">30</span>
+        </div>
 
-<script type="text/javascript">
-var colorPallete = [
-  'rgb(255, 245, 240)',
-  'rgb(254, 224, 210)',
-  'rgb(252, 187, 161)',
-  'rgb(252, 146, 114)',
-  'rgb(251, 106, 74)',
-  'rgb(239, 59, 44)',
-  'rgb(203, 24, 29)',
-  'rgb(165, 15, 21)',
-  'rgb(103, 0, 13)'
-]
+        <input type="range" id="cell-size" min="10" max="100" value="30" onchange="updateVisibleValue()">
 
+        <label for="image-file" class="button">
+            <i class="fa fa-upload"></i>
+            Upload an image
+        </label>
+        <input type="file" id="image-file" onchange="readURL(this)">
+    </header>
 
-var Delaunay;
+    <div id="canvas">
+        Just add an image and see the magic
+    </div>
+</div>
 
-(function() {
-  "use strict";
-
-  var EPSILON = 1.0 / 1048576.0;
-
-  function supertriangle(vertices) {
-    var xmin = Number.POSITIVE_INFINITY,
-      ymin = Number.POSITIVE_INFINITY,
-      xmax = Number.NEGATIVE_INFINITY,
-      ymax = Number.NEGATIVE_INFINITY,
-      i, dx, dy, dmax, xmid, ymid;
-
-    for (i = vertices.length; i--;) {
-      if (vertices[i][0] < xmin) xmin = vertices[i][0];
-      if (vertices[i][0] > xmax) xmax = vertices[i][0];
-      if (vertices[i][1] < ymin) ymin = vertices[i][1];
-      if (vertices[i][1] > ymax) ymax = vertices[i][1];
-    }
-
-    dx = xmax - xmin;
-    dy = ymax - ymin;
-    dmax = Math.max(dx, dy);
-    xmid = xmin + dx * 0.5;
-    ymid = ymin + dy * 0.5;
-
-    return [
-      [xmid - 20 * dmax, ymid - dmax],
-      [xmid, ymid + 20 * dmax],
-      [xmid + 20 * dmax, ymid - dmax]
-    ];
-  }
-
-  function circumcircle(vertices, i, j, k) {
-    var x1 = vertices[i][0],
-      y1 = vertices[i][1],
-      x2 = vertices[j][0],
-      y2 = vertices[j][1],
-      x3 = vertices[k][0],
-      y3 = vertices[k][1],
-      fabsy1y2 = Math.abs(y1 - y2),
-      fabsy2y3 = Math.abs(y2 - y3),
-      xc, yc, m1, m2, mx1, mx2, my1, my2, dx, dy;
-
-    /* Check for coincident points */
-    if (fabsy1y2 < EPSILON && fabsy2y3 < EPSILON)
-      throw new Error("Eek! Coincident points!");
-
-    if (fabsy1y2 < EPSILON) {
-      m2 = -((x3 - x2) / (y3 - y2));
-      mx2 = (x2 + x3) / 2.0;
-      my2 = (y2 + y3) / 2.0;
-      xc = (x2 + x1) / 2.0;
-      yc = m2 * (xc - mx2) + my2;
-    } else if (fabsy2y3 < EPSILON) {
-      m1 = -((x2 - x1) / (y2 - y1));
-      mx1 = (x1 + x2) / 2.0;
-      my1 = (y1 + y2) / 2.0;
-      xc = (x3 + x2) / 2.0;
-      yc = m1 * (xc - mx1) + my1;
-    } else {
-      m1 = -((x2 - x1) / (y2 - y1));
-      m2 = -((x3 - x2) / (y3 - y2));
-      mx1 = (x1 + x2) / 2.0;
-      mx2 = (x2 + x3) / 2.0;
-      my1 = (y1 + y2) / 2.0;
-      my2 = (y2 + y3) / 2.0;
-      xc = (m1 * mx1 - m2 * mx2 + my2 - my1) / (m1 - m2);
-      yc = (fabsy1y2 > fabsy2y3) ?
-        m1 * (xc - mx1) + my1 :
-        m2 * (xc - mx2) + my2;
-    }
-
-    dx = x2 - xc;
-    dy = y2 - yc;
-    return {
-      i: i,
-      j: j,
-      k: k,
-      x: xc,
-      y: yc,
-      r: dx * dx + dy * dy
-    };
-  }
-
-  function dedup(edges) {
-    var i, j, a, b, m, n;
-
-    for (j = edges.length; j;) {
-      b = edges[--j];
-      a = edges[--j];
-
-      for (i = j; i;) {
-        n = edges[--i];
-        m = edges[--i];
-
-        if ((a === m && b === n) || (a === n && b === m)) {
-          edges.splice(j, 2);
-          edges.splice(i, 2);
-          break;
-        }
-      }
-    }
-  }
-
-  Delaunay = {
-    triangulate: function(vertices, key) {
-      var n = vertices.length,
-        i, j, indices, st, open, closed, edges, dx, dy, a, b, c;
-
-      /* Bail if there aren't enough vertices to form any triangles. */
-      if (n < 3)
-        return [];
-
-      /* Slice out the actual vertices from the passed objects. (Duplicate the
-       * array even if we don't, though, since we need to make a supertriangle
-       * later on!) */
-      vertices = vertices.slice(0);
-
-      if (key)
-        for (i = n; i--;)
-          vertices[i] = vertices[i][key];
-
-      /* Make an array of indices into the vertex array, sorted by the
-       * vertices' x-position. */
-      indices = new Array(n);
-
-      for (i = n; i--;)
-        indices[i] = i;
-
-      indices.sort(function(i, j) {
-        return vertices[j][0] - vertices[i][0];
-      });
-
-      /* Next, find the vertices of the supertriangle (which contains all other
-       * triangles), and append them onto the end of a (copy of) the vertex
-       * array. */
-      st = supertriangle(vertices);
-      vertices.push(st[0], st[1], st[2]);
-
-      /* Initialize the open list (containing the supertriangle and nothing
-       * else) and the closed list (which is empty since we havn't processed
-       * any triangles yet). */
-      open = [circumcircle(vertices, n + 0, n + 1, n + 2)];
-      closed = [];
-      edges = [];
-
-      /* Incrementally add each vertex to the mesh. */
-      for (i = indices.length; i--; edges.length = 0) {
-        c = indices[i];
-
-        /* For each open triangle, check to see if the current point is
-         * inside it's circumcircle. If it is, remove the triangle and add
-         * it's edges to an edge list. */
-        for (j = open.length; j--;) {
-          /* If this point is to the right of this triangle's circumcircle,
-           * then this triangle should never get checked again. Remove it
-           * from the open list, add it to the closed list, and skip. */
-          dx = vertices[c][0] - open[j].x;
-          if (dx > 0.0 && dx * dx > open[j].r) {
-            closed.push(open[j]);
-            open.splice(j, 1);
-            continue;
-          }
-
-          /* If we're outside the circumcircle, skip this triangle. */
-          dy = vertices[c][1] - open[j].y;
-          if (dx * dx + dy * dy - open[j].r > EPSILON)
-            continue;
-
-          /* Remove the triangle and add it's edges to the edge list. */
-          edges.push(
-            open[j].i, open[j].j,
-            open[j].j, open[j].k,
-            open[j].k, open[j].i
-          );
-          open.splice(j, 1);
-        }
-
-        /* Remove any doubled edges. */
-        dedup(edges);
-
-        /* Add a new triangle for each edge. */
-        for (j = edges.length; j;) {
-          b = edges[--j];
-          a = edges[--j];
-          open.push(circumcircle(vertices, a, b, c));
-        }
-      }
-
-      /* Copy any remaining open triangles to the closed list, and then
-       * remove any triangles that share a vertex with the supertriangle,
-       * building a list of triplets that represent triangles. */
-      for (i = open.length; i--;)
-        closed.push(open[i]);
-      open.length = 0;
-
-      for (i = closed.length; i--;)
-        if (closed[i].i < n && closed[i].j < n && closed[i].k < n)
-          open.push(closed[i].i, closed[i].j, closed[i].k);
-
-        /* Yay, we're done! */
-      return open;
-    },
-    contains: function(tri, p) {
-      /* Bounding box test first, for quick rejections. */
-      if ((p[0] < tri[0][0] && p[0] < tri[1][0] && p[0] < tri[2][0]) ||
-        (p[0] > tri[0][0] && p[0] > tri[1][0] && p[0] > tri[2][0]) ||
-        (p[1] < tri[0][1] && p[1] < tri[1][1] && p[1] < tri[2][1]) ||
-        (p[1] > tri[0][1] && p[1] > tri[1][1] && p[1] > tri[2][1]))
-        return null;
-
-      var a = tri[1][0] - tri[0][0],
-        b = tri[2][0] - tri[0][0],
-        c = tri[1][1] - tri[0][1],
-        d = tri[2][1] - tri[0][1],
-        i = a * d - b * c;
-
-      /* Degenerate tri. */
-      if (i === 0.0)
-        return null;
-
-      var u = (d * (p[0] - tri[0][0]) - b * (p[1] - tri[0][1])) / i,
-        v = (a * (p[1] - tri[0][1]) - c * (p[0] - tri[0][0])) / i;
-
-      /* If we're outside the tri, fail. */
-      if (u < 0.0 || v < 0.0 || (u + v) > 1.0)
-        return null;
-
-      return [u, v];
-    }
-  };
-
-  if (typeof module !== "undefined")
-    module.exports = Delaunay;
-})();
-
-
-var width = 600;
-var height = 600;
-var cellSize = 15;
-var xCells = parseInt(width / cellSize);
-var yCells = parseInt(height / cellSize);
-
-var gridStart = {
-  x: -cellSize,
-  y: -cellSize
-};
-
-var gridEnd = {
-  x: (xCells + 1) * cellSize,
-  y: (yCells + 1) * cellSize
-}
-
-function randomIntFromInterval(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-function draw(triangle, color) {
-  var canvas = $(".container")[0];
-  if (canvas.getContext) {
-    var ctx = canvas.getContext('2d');
-
-    ctx.beginPath();
-    ctx.moveTo(triangle[0][0], triangle[0][1]);
-    ctx.lineTo(triangle[1][0], triangle[1][1]);
-    ctx.lineTo(triangle[2][0], triangle[2][1]);
-    ctx.fillStyle = color;
-    ctx.strokeStyle = color;
-    ctx.fill();
-    ctx.stroke()
-  }
-}
-
-
-
-$(document).ready(function() {
-  $(".container").width(width);
-  $(".container").height(height);
-  var points = []
-  for (x = gridStart.x; x <= gridEnd.x; x += cellSize) {
-    for (y = gridStart.y; y <= gridEnd.y; y += cellSize) {
-      var point = {
-        x: randomIntFromInterval(x, x + cellSize),
-        y: randomIntFromInterval(y, y + cellSize)
-      }
-      points.push([point.x, point.y]);
-    }
-  }
-  var indices = Delaunay.triangulate(points)
-  var triangles = [];
-  for (var i = 0; i < indices.length; i += 3) {
-    var vertices = [indices[i], indices[i + 1], indices[i + 2]].map(function(i) {
-      return points[i];
-    });
-    triangles.push(vertices);
-  }
-  for (i = 0; i < triangles.length; i++) {
-    var color = colorPallete[Math.floor(Math.random()*colorPallete.length)]
-    color = colorPallete[Math.floor((i*colorPallete.length)/triangles.length)]
-    draw(triangles[i], color)
-  }
-
-})
-
-</script>
+<div id="loading" class="loading">Processing...</div>
+<script type="text/javascript" src="./bower_components/delaunay-fast/delaunay.js"></script>
+<script type="text/javascript" src="./dist/polygonize.js"></script>
+<script type="text/javascript" src="demo.js"></script>
 </body>
 </html>

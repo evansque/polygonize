@@ -1,11 +1,12 @@
 {
-  "name": "singleC",
-  "homepage": "https://github.com/AymanJitan/triangular",
+  "name": "polygonize",
+  "version": "0.1.0",
+  "homepage": "https://github.com/AymanJitan/polygonize",
   "authors": [
     "AymanJitan <ayman.jitan@gmail.com>"
   ],
-  "description": "",
-  "main": "",
+  "description": "A fun tool to create geometric low poly art images",
+  "main": "dist/polygonize.js",
   "license": "MIT",
   "dependencies": {
     "delaunay-fast": "^1.0.1"

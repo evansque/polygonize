@@ -1,4 +1,11 @@
 # polygonize
+
+## Quickstart
+```
+<script type="text/javascript" src="./bower_components/delaunay-fast/delaunay.js"></script>
+<script type="text/javascript" src="./bower_components/polygonize/dist/polygonize.js"></script>
+```
+
 ## API
 ```
   Polygonize({

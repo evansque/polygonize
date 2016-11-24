@@ -43,6 +43,12 @@ Load the script files
 <img width='400' src='https://cloud.githubusercontent.com/assets/3917887/20608302/97bdb354-b24e-11e6-8347-e38de06df4ae.png'>
 <img width='400' src='https://cloud.githubusercontent.com/assets/3917887/20608316/adedbaf2-b24e-11e6-89e9-d0a67096556d.png'>
 
+## Development
+clone and repository and then
+```
+    npm install && bower install && npm start
+```
+
 ## TODO
 * Intensive JavaScript computations blocks the single thread
 

@@ -48,6 +48,7 @@ clone and repository and then
 ```
     npm install && bower install && npm start
 ```
+Gulp server will start on port 8888
 
 ## TODO
 * Intensive JavaScript computations blocks the single thread

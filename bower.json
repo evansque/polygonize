@@ -1,10 +1,8 @@
 {
   "name": "polygonize",
   "version": "0.1.0",
-  "homepage": "https://github.com/AymanJitan/polygonize",
-  "authors": [
-    "AymanJitan <ayman.jitan@gmail.com>"
-  ],
+  "homepage": "https://github.com/evansque/polygonize",
+  "authors": ["Evan Lévesque <evan.levs@gmail.com>"],
   "description": "A fun tool to create geometric low poly art images",
   "main": "dist/polygonize.js",
   "license": "MIT",
